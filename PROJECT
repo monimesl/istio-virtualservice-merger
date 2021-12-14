@@ -1,0 +1,19 @@
+domain: monime.sl
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: istio-virtualservice-merger
+repo: github.com/monimesl/istio-virtualservice-merger
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: monime.sl
+  group: istiomerger
+  kind: VirtualServiceMerge
+  path: github.com/monimesl/istio-virtualservice-merger/api/v1alpha1
+  version: v1alpha1
+version: "3"

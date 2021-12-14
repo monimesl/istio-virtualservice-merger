@@ -1,0 +1,847 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: virtualservicemerges.istiomerger.monime.sl
+spec:
+  group: istiomerger.monime.sl
+  names:
+    kind: VirtualServiceMerge
+    listKind: VirtualServiceMergeList
+    plural: virtualservicemerges
+    singular: virtualservicemerge
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: VirtualServiceMergeSpec defines the desired state of
+                VirtualServiceMerge
+              properties:
+                target:
+                  description: Target defines the source resource to merged with
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  type: object
+                patch:
+                  description: "Configuration affecting traffic routing. \n <!-- crd
+                  generation tags that should apply these routes\" representing the
+                  server time when this object was created. It is not guaranteed to
+                  be set in happens-before order across separate operations. Clients
+                  may not set this value. It is represented in RFC3339 form and is
+                  in UTC. Populated by the system. Read-only. Null for lists. More
+                  info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\"
+                  --> \n <!-- go code generation tags --> <!-- istio code generation
+                  tags -->"
+                  properties:
+                    exportTo:
+                      description: >-
+                        A list of namespaces to which this virtual service is
+                        exported.
+                      type: array
+                      items:
+                        type: string
+                    gateways:
+                      description: >-
+                        The names of gateways and sidecars that should apply these
+                        routes.
+                      type: array
+                      items:
+                        type: string
+                    hosts:
+                      description: The destination hosts to which traffic is being sent.
+                      type: array
+                      items:
+                        type: string
+                    http:
+                      description: An ordered list of route rules for HTTP traffic.
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          corsPolicy:
+                            description: Cross-Origin Resource Sharing policy (CORS).
+                            type: object
+                            properties:
+                              allowCredentials:
+                                type: boolean
+                                nullable: true
+                              allowHeaders:
+                                type: array
+                                items:
+                                  type: string
+                              allowMethods:
+                                description: >-
+                                  List of HTTP methods allowed to access the
+                                  resource.
+                                type: array
+                                items:
+                                  type: string
+                              allowOrigin:
+                                description: >-
+                                  The list of origins that are allowed to perform
+                                  CORS requests.
+                                type: array
+                                items:
+                                  type: string
+                              allowOrigins:
+                                description: String patterns that match allowed origins.
+                                type: array
+                                items:
+                                  type: object
+                                  oneOf:
+                                    - not:
+                                        anyOf:
+                                          - required:
+                                              - exact
+                                          - required:
+                                              - prefix
+                                          - required:
+                                              - regex
+                                    - required:
+                                        - exact
+                                    - required:
+                                        - prefix
+                                    - required:
+                                        - regex
+                                  properties:
+                                    exact:
+                                      type: string
+                                    prefix:
+                                      type: string
+                                    regex:
+                                      description: >-
+                                        RE2 style regex-based match
+                                        (https://github.com/google/re2/wiki/Syntax).
+                                      type: string
+                              exposeHeaders:
+                                type: array
+                                items:
+                                  type: string
+                              maxAge:
+                                type: string
+                          delegate:
+                            type: object
+                            properties:
+                              name:
+                                description: >-
+                                  Name specifies the name of the delegate
+                                  VirtualService.
+                                type: string
+                              namespace:
+                                description: >-
+                                  Namespace specifies the namespace where the
+                                  delegate VirtualService resides.
+                                type: string
+                          fault:
+                            description: >-
+                              Fault injection policy to apply on HTTP traffic at the
+                              client side.
+                            type: object
+                            properties:
+                              abort:
+                                type: object
+                                oneOf:
+                                  - not:
+                                      anyOf:
+                                        - required:
+                                            - httpStatus
+                                        - required:
+                                            - grpcStatus
+                                        - required:
+                                            - http2Error
+                                  - required:
+                                      - httpStatus
+                                  - required:
+                                      - grpcStatus
+                                  - required:
+                                      - http2Error
+                                properties:
+                                  grpcStatus:
+                                    type: string
+                                  http2Error:
+                                    type: string
+                                  httpStatus:
+                                    description: >-
+                                      HTTP status code to use to abort the Http
+                                      request.
+                                    type: integer
+                                    format: int32
+                                  percentage:
+                                    description: >-
+                                      Percentage of requests to be aborted with the
+                                      error code provided.
+                                    type: object
+                                    properties:
+                                      value:
+                                        type: number
+                                        format: double
+                              delay:
+                                type: object
+                                oneOf:
+                                  - not:
+                                      anyOf:
+                                        - required:
+                                            - fixedDelay
+                                        - required:
+                                            - exponentialDelay
+                                  - required:
+                                      - fixedDelay
+                                  - required:
+                                      - exponentialDelay
+                                properties:
+                                  exponentialDelay:
+                                    type: string
+                                  fixedDelay:
+                                    description: >-
+                                      Add a fixed delay before forwarding the
+                                      request.
+                                    type: string
+                                  percent:
+                                    description: >-
+                                      Percentage of requests on which the delay will
+                                      be injected (0-100).
+                                    type: integer
+                                    format: int32
+                                  percentage:
+                                    description: >-
+                                      Percentage of requests on which the delay will
+                                      be injected.
+                                    type: object
+                                    properties:
+                                      value:
+                                        type: number
+                                        format: double
+                          headers:
+                            type: object
+                            properties:
+                              request:
+                                type: object
+                                properties:
+                                  add:
+                                    type: object
+                                    additionalProperties:
+                                      type: string
+                                  remove:
+                                    type: array
+                                    items:
+                                      type: string
+                                  set:
+                                    type: object
+                                    additionalProperties:
+                                      type: string
+                              response:
+                                type: object
+                                properties:
+                                  add:
+                                    type: object
+                                    additionalProperties:
+                                      type: string
+                                  remove:
+                                    type: array
+                                    items:
+                                      type: string
+                                  set:
+                                    type: object
+                                    additionalProperties:
+                                      type: string
+                          match:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                authority:
+                                  type: object
+                                  oneOf:
+                                    - not:
+                                        anyOf:
+                                          - required:
+                                              - exact
+                                          - required:
+                                              - prefix
+                                          - required:
+                                              - regex
+                                    - required:
+                                        - exact
+                                    - required:
+                                        - prefix
+                                    - required:
+                                        - regex
+                                  properties:
+                                    exact:
+                                      type: string
+                                    prefix:
+                                      type: string
+                                    regex:
+                                      description: >-
+                                        RE2 style regex-based match
+                                        (https://github.com/google/re2/wiki/Syntax).
+                                      type: string
+                                gateways:
+                                  description: >-
+                                    Names of gateways where the rule should be
+                                    applied.
+                                  type: array
+                                  items:
+                                    type: string
+                                headers:
+                                  type: object
+                                  additionalProperties:
+                                    type: object
+                                    oneOf:
+                                      - not:
+                                          anyOf:
+                                            - required:
+                                                - exact
+                                            - required:
+                                                - prefix
+                                            - required:
+                                                - regex
+                                      - required:
+                                          - exact
+                                      - required:
+                                          - prefix
+                                      - required:
+                                          - regex
+                                    properties:
+                                      exact:
+                                        type: string
+                                      prefix:
+                                        type: string
+                                      regex:
+                                        description: >-
+                                          RE2 style regex-based match
+                                          (https://github.com/google/re2/wiki/Syntax).
+                                        type: string
+                                ignoreUriCase:
+                                  description: >-
+                                    Flag to specify whether the URI matching should
+                                    be case-insensitive.
+                                  type: boolean
+                                method:
+                                  type: object
+                                  oneOf:
+                                    - not:
+                                        anyOf:
+                                          - required:
+                                              - exact
+                                          - required:
+                                              - prefix
+                                          - required:
+                                              - regex
+                                    - required:
+                                        - exact
+                                    - required:
+                                        - prefix
+                                    - required:
+                                        - regex
+                                  properties:
+                                    exact:
+                                      type: string
+                                    prefix:
+                                      type: string
+                                    regex:
+                                      description: >-
+                                        RE2 style regex-based match
+                                        (https://github.com/google/re2/wiki/Syntax).
+                                      type: string
+                                name:
+                                  description: The name assigned to a match.
+                                  type: string
+                                port:
+                                  description: >-
+                                    Specifies the ports on the host that is being
+                                    addressed.
+                                  type: integer
+                                queryParams:
+                                  description: Query parameters for matching.
+                                  type: object
+                                  additionalProperties:
+                                    type: object
+                                    oneOf:
+                                      - not:
+                                          anyOf:
+                                            - required:
+                                                - exact
+                                            - required:
+                                                - prefix
+                                            - required:
+                                                - regex
+                                      - required:
+                                          - exact
+                                      - required:
+                                          - prefix
+                                      - required:
+                                          - regex
+                                    properties:
+                                      exact:
+                                        type: string
+                                      prefix:
+                                        type: string
+                                      regex:
+                                        description: >-
+                                          RE2 style regex-based match
+                                          (https://github.com/google/re2/wiki/Syntax).
+                                        type: string
+                                scheme:
+                                  type: object
+                                  oneOf:
+                                    - not:
+                                        anyOf:
+                                          - required:
+                                              - exact
+                                          - required:
+                                              - prefix
+                                          - required:
+                                              - regex
+                                    - required:
+                                        - exact
+                                    - required:
+                                        - prefix
+                                    - required:
+                                        - regex
+                                  properties:
+                                    exact:
+                                      type: string
+                                    prefix:
+                                      type: string
+                                    regex:
+                                      description: >-
+                                        RE2 style regex-based match
+                                        (https://github.com/google/re2/wiki/Syntax).
+                                      type: string
+                                sourceLabels:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                                sourceNamespace:
+                                  description: >-
+                                    Source namespace constraining the applicability
+                                    of a rule to workloads in that namespace.
+                                  type: string
+                                uri:
+                                  type: object
+                                  oneOf:
+                                    - not:
+                                        anyOf:
+                                          - required:
+                                              - exact
+                                          - required:
+                                              - prefix
+                                          - required:
+                                              - regex
+                                    - required:
+                                        - exact
+                                    - required:
+                                        - prefix
+                                    - required:
+                                        - regex
+                                  properties:
+                                    exact:
+                                      type: string
+                                    prefix:
+                                      type: string
+                                    regex:
+                                      description: >-
+                                        RE2 style regex-based match
+                                        (https://github.com/google/re2/wiki/Syntax).
+                                      type: string
+                                withoutHeaders:
+                                  description: >-
+                                    withoutHeader has the same syntax with the
+                                    header, but has opposite meaning.
+                                  type: object
+                                  additionalProperties:
+                                    type: object
+                                    oneOf:
+                                      - not:
+                                          anyOf:
+                                            - required:
+                                                - exact
+                                            - required:
+                                                - prefix
+                                            - required:
+                                                - regex
+                                      - required:
+                                          - exact
+                                      - required:
+                                          - prefix
+                                      - required:
+                                          - regex
+                                    properties:
+                                      exact:
+                                        type: string
+                                      prefix:
+                                        type: string
+                                      regex:
+                                        description: >-
+                                          RE2 style regex-based match
+                                          (https://github.com/google/re2/wiki/Syntax).
+                                        type: string
+                          mirror:
+                            type: object
+                            properties:
+                              host:
+                                description: The name of a service from the service registry.
+                                type: string
+                              port:
+                                description: >-
+                                  Specifies the port on the host that is being
+                                  addressed.
+                                type: object
+                                properties:
+                                  number:
+                                    type: integer
+                              subset:
+                                description: The name of a subset within the service.
+                                type: string
+                          mirrorPercent:
+                            description: >-
+                              Percentage of the traffic to be mirrored by the
+                              `mirror` field.
+                            type: integer
+                            nullable: true
+                          mirrorPercentage:
+                            description: >-
+                              Percentage of the traffic to be mirrored by the
+                              `mirror` field.
+                            type: object
+                            properties:
+                              value:
+                                type: number
+                                format: double
+                          mirror_percent:
+                            description: >-
+                              Percentage of the traffic to be mirrored by the
+                              `mirror` field.
+                            type: integer
+                            nullable: true
+                          name:
+                            description: The name assigned to the route for debugging purposes.
+                            type: string
+                          redirect:
+                            description: >-
+                              A HTTP rule can either redirect or forward (default)
+                              traffic.
+                            type: object
+                            oneOf:
+                              - not:
+                                  anyOf:
+                                    - required:
+                                        - port
+                                    - required:
+                                        - derivePort
+                              - required:
+                                  - port
+                              - required:
+                                  - derivePort
+                            properties:
+                              authority:
+                                type: string
+                              derivePort:
+                                type: string
+                                enum:
+                                  - FROM_PROTOCOL_DEFAULT
+                                  - FROM_REQUEST_PORT
+                              port:
+                                description: >-
+                                  On a redirect, overwrite the port portion of the
+                                  URL with this value.
+                                type: integer
+                              redirectCode:
+                                type: integer
+                              scheme:
+                                description: >-
+                                  On a redirect, overwrite the scheme portion of the
+                                  URL with this value.
+                                type: string
+                              uri:
+                                type: string
+                          retries:
+                            description: Retry policy for HTTP requests.
+                            type: object
+                            properties:
+                              attempts:
+                                description: >-
+                                  Number of retries to be allowed for a given
+                                  request.
+                                type: integer
+                                format: int32
+                              perTryTimeout:
+                                description: >-
+                                  Timeout per attempt for a given request, including
+                                  the initial call and any retries.
+                                type: string
+                              retryOn:
+                                description: >-
+                                  Specifies the conditions under which retry takes
+                                  place.
+                                type: string
+                              retryRemoteLocalities:
+                                description: >-
+                                  Flag to specify whether the retries should retry
+                                  to other localities.
+                                type: boolean
+                                nullable: true
+                          rewrite:
+                            description: Rewrite HTTP URIs and Authority headers.
+                            type: object
+                            properties:
+                              authority:
+                                description: rewrite the Authority/Host header with this value.
+                                type: string
+                              uri:
+                                type: string
+                          route:
+                            description: >-
+                              A HTTP rule can either redirect or forward (default)
+                              traffic.
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                destination:
+                                  type: object
+                                  properties:
+                                    host:
+                                      description: >-
+                                        The name of a service from the service
+                                        registry.
+                                      type: string
+                                    port:
+                                      description: >-
+                                        Specifies the port on the host that is being
+                                        addressed.
+                                      type: object
+                                      properties:
+                                        number:
+                                          type: integer
+                                    subset:
+                                      description: The name of a subset within the service.
+                                      type: string
+                                headers:
+                                  type: object
+                                  properties:
+                                    request:
+                                      type: object
+                                      properties:
+                                        add:
+                                          type: object
+                                          additionalProperties:
+                                            type: string
+                                        remove:
+                                          type: array
+                                          items:
+                                            type: string
+                                        set:
+                                          type: object
+                                          additionalProperties:
+                                            type: string
+                                    response:
+                                      type: object
+                                      properties:
+                                        add:
+                                          type: object
+                                          additionalProperties:
+                                            type: string
+                                        remove:
+                                          type: array
+                                          items:
+                                            type: string
+                                        set:
+                                          type: object
+                                          additionalProperties:
+                                            type: string
+                                weight:
+                                  type: integer
+                                  format: int32
+                          timeout:
+                            description: Timeout for HTTP requests, default is disabled.
+                            type: string
+                    tcp:
+                      description: An ordered list of route rules for opaque TCP traffic.
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          match:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                destinationSubnets:
+                                  description: >-
+                                    IPv4 or IPv6 ip addresses of destination with
+                                    optional subnet.
+                                  type: array
+                                  items:
+                                    type: string
+                                gateways:
+                                  description: >-
+                                    Names of gateways where the rule should be
+                                    applied.
+                                  type: array
+                                  items:
+                                    type: string
+                                port:
+                                  description: >-
+                                    Specifies the port on the host that is being
+                                    addressed.
+                                  type: integer
+                                sourceLabels:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                                sourceNamespace:
+                                  description: >-
+                                    Source namespace constraining the applicability
+                                    of a rule to workloads in that namespace.
+                                  type: string
+                                sourceSubnet:
+                                  description: >-
+                                    IPv4 or IPv6 ip address of source with optional
+                                    subnet.
+                                  type: string
+                          route:
+                            description: >-
+                              The destination to which the connection should be
+                              forwarded to.
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                destination:
+                                  type: object
+                                  properties:
+                                    host:
+                                      description: >-
+                                        The name of a service from the service
+                                        registry.
+                                      type: string
+                                    port:
+                                      description: >-
+                                        Specifies the port on the host that is being
+                                        addressed.
+                                      type: object
+                                      properties:
+                                        number:
+                                          type: integer
+                                    subset:
+                                      description: The name of a subset within the service.
+                                      type: string
+                                weight:
+                                  type: integer
+                                  format: int32
+                    tls:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          match:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                destinationSubnets:
+                                  description: >-
+                                    IPv4 or IPv6 ip addresses of destination with
+                                    optional subnet.
+                                  type: array
+                                  items:
+                                    type: string
+                                gateways:
+                                  description: >-
+                                    Names of gateways where the rule should be
+                                    applied.
+                                  type: array
+                                  items:
+                                    type: string
+                                port:
+                                  description: >-
+                                    Specifies the port on the host that is being
+                                    addressed.
+                                  type: integer
+                                sniHosts:
+                                  description: SNI (server name indicator) to match on.
+                                  type: array
+                                  items:
+                                    type: string
+                                sourceLabels:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                                sourceNamespace:
+                                  description: >-
+                                    Source namespace constraining the applicability
+                                    of a rule to workloads in that namespace.
+                                  type: string
+                          route:
+                            description: >-
+                              The destination to which the connection should be
+                              forwarded to.
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                destination:
+                                  type: object
+                                  properties:
+                                    host:
+                                      description: >-
+                                        The name of a service from the service
+                                        registry.
+                                      type: string
+                                    port:
+                                      description: >-
+                                        Specifies the port on the host that is being
+                                        addressed.
+                                      type: object
+                                      properties:
+                                        number:
+                                          type: integer
+                                    subset:
+                                      description: The name of a subset within the service.
+                                      type: string
+                                weight:
+                                  type: integer
+                                  format: int32
+                  type: object
+              required:
+                - target
+                - patch
+              type: object
+            status:
+              description: VirtualServiceMergeStatus defines the observed state
+                of VirtualServiceMerge
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: { }
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: [ ]
+  storedVersions: [ ]

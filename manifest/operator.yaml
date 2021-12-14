@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istio-virtualservice-merger
+  namespace: istio-virtualservice-merger
+  labels:
+    app: istio-virtualservice-merger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: istio-virtualservice-merger
+  template:
+    metadata:
+      labels:
+        app: istio-virtualservice-merger
+    spec:
+      containers:
+        - name: operator
+          image: monime/istio-virtualservice-merger:latest
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LEADER_ELECTION_NAMESPACE
+              value: istio-virtualservice-merger
+          resources:
+            requests:
+              cpu: 20m
+              memory: 50Mi
