@@ -21,9 +21,7 @@ kubectl apply -f https://raw.githubusercontent.com/monimesl/istio-virtualservice
 kubectl apply -f https://raw.githubusercontent.com/monimesl/istio-virtualservice-merger/master/manifest/operator.yaml
 ```
 
-##### Create a target [virtual service](https://istio.io/latest/docs/reference/config/networking/virtual-service/) on which
-
-seperated patches are merged into.
+##### Create a target [virtual service](https://istio.io/latest/docs/reference/config/networking/virtual-service/) on which seperated patches are merged into.
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
