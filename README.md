@@ -46,7 +46,7 @@ metadata:
 spec:
   target:
     name: "api-routes" ## the virtual service above
-    namespace: "" # empty or omitted means same the VirtualServiceMerge
+    namespace: "" # empty or omitted means the same as the VirtualServiceMerge
   patch: # same as https://istio.io/latest/docs/reference/config/networking/virtual-service/#VirtualService
     http:
       - match:
@@ -70,7 +70,7 @@ metadata:
 spec:
   target:
     name: "api-routes" ## the virtual service above
-    namespace: "" # empty or omitted means same the VirtualServiceMerge
+    namespace: "" # empty or omitted means the same as the VirtualServiceMerge
   patch: # same as https://istio.io/latest/docs/reference/config/networking/virtual-service/#VirtualService
     http:
       - match:
