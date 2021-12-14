@@ -1,3 +1,126 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: istio-virtualservice-merger
+  name: istio-virtualservice-merger
+---
+# permissions to do leader election.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: istio-virtualservice-merger-leader-election-role
+  namespace: istio-virtualservice-merger
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: istio-virtualservice-merger-leader-election-rolebinding
+  namespace: istio-virtualservice-merger
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: istio-virtualservice-merger-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: istio-virtualservice-merger
+    namespace: istio-virtualservice-merger
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: istio-virtualservice-merger-manager-role
+rules:
+  - apiGroups:
+      - istiomerger.monime.sl
+    resources:
+      - virtualservicemerges
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - istiomerger.monime.sl
+    resources:
+      - virtualservicemerges/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - networking.istio.io
+    resources:
+      - virtualservices
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - ""
+      - apps
+      - batch
+      - policy
+      - extensions
+    resources:
+      - jobs
+      - pods
+      - events
+      - secrets
+      - services
+      - configmaps
+      - statefulsets
+      - poddisruptionbudgets
+      - persistentvolumeclaims
+    verbs:
+      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: istio-virtualservice-merger-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: istio-virtualservice-merger-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: istio-virtualservice-merger
+    namespace: istio-virtualservice-merger
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,3 +152,4 @@ spec:
             requests:
               cpu: 20m
               memory: 50Mi
+      serviceAccountName: istio-virtualservice-merger
