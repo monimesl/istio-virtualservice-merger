@@ -199,20 +199,21 @@ func parsePrecedence(ctx reconciler.Context, name string) (string, int64) {
 	if len(parts) == 1 {
 		return "", 0
 	}
-	versionStr := parts[1]
-	precedence, err := strconv.ParseInt(versionStr, 10, 64)
+	orderStr := parts[len(parts)-1]
+	order, err := strconv.ParseInt(orderStr, 10, 64)
 	if err != nil {
-		ctx.Logger().Error(err, "Bad precedence version for route",
-			"name", name, "version", versionStr)
-		return versionStr, 0
+		ctx.Logger().Error(err, "Bad order for route", "name", name, "order", orderStr)
+		return orderStr, 0
 	}
-	return versionStr, precedence
+	return orderStr, order
 }
 
 func (in *VirtualServiceMerge) generateHttpRoutes() []*v1alpha3.HTTPRoute {
 	routes := make([]*v1alpha3.HTTPRoute, len(in.Spec.Patch.Http))
 	for i, r := range in.Spec.Patch.Http {
-		r.Name = fmt.Sprintf("%s-%d", in.Name, i)
+		if r.Name == "" {
+			r.Name = fmt.Sprintf("%s-%d", in.Name, i)
+		}
 		routes[i] = r
 	}
 	return routes
