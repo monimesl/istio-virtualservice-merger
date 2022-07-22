@@ -19,10 +19,12 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/monimesl/istio-virtualservice-merger/api/v1alpha1"
 	"github.com/monimesl/operator-helper/oputil"
 	"github.com/monimesl/operator-helper/reconciler"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,7 +42,12 @@ func Reconcile(ctx reconciler.Context, client *versionedclient.Clientset, patch 
 		}
 	} else if oputil.Contains(patch.Finalizers, finalizerName) {
 		if err := updateTarget(client, patch, true); err != nil {
-			return err
+			if kerr.IsNotFound(err) {
+				// do not need to panic just log output
+				ctx.Logger().Info("Virtual service not found.")
+			} else {
+				return err
+			}
 		}
 		patch.Finalizers = oputil.Remove(finalizerName, patch.Finalizers)
 		if err := ctx.Client().Update(context.TODO(), patch); err != nil {

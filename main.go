@@ -17,11 +17,14 @@
 package main
 
 import (
+	"flag"
+	"log"
+
 	"github.com/monimesl/istio-virtualservice-merger/api/v1alpha1"
 	"github.com/monimesl/istio-virtualservice-merger/controller"
+	"go.uber.org/zap/zapcore"
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
-	"log"
 
 	"github.com/monimesl/operator-helper/config"
 	"github.com/monimesl/operator-helper/reconciler"
@@ -30,8 +33,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	// +kubebuilder:scaffold:imports
 )
 
@@ -47,9 +50,22 @@ func init() {
 }
 
 func main() {
+	var namespace string
+	flag.StringVar(&namespace, "namespace", "istio-merger-operator", "Select which namespace this controller is deployed")
+	flag.Parse()
+
+	// set logger
+	opts := zap.Options{
+		Development: true,
+		Encoder:     zapcore.NewJSONEncoder(zapcore.EncoderConfig{}),
+	}
+
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// start manager
 	cfg, options := config.GetManagerParams(scheme,
-		"istio-merger-operator",
-		"istio.merger.monime.sl")
+		namespace,
+		"istiomerger.monime.sl")
 	mgr, err := manager.New(cfg, options)
 	if err != nil {
 		log.Fatalf("manager create error: %s", err)

@@ -18,10 +18,16 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/monimesl/istio-virtualservice-merger/api/v1alpha1"
 	"github.com/monimesl/operator-helper/reconciler"
+	istio "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type VirtualServicePatchReconciler struct {
@@ -33,6 +39,39 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 	r.Context = ctx
 	return ctx.NewControllerBuilder().
 		For(&v1alpha1.VirtualServiceMerge{}).
+		Watches(&source.Kind{Type: &istio.VirtualService{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) [](reconcile.Request) {
+			vs := obj.(*istio.VirtualService)
+			requests := make([]reconcile.Request, 0)
+
+			// skip if vs is being deleted
+			if !vs.GetDeletionTimestamp().IsZero() {
+				return requests
+			}
+			// get all virtual service merge whos target is this virtual service
+			vsmegeList := &v1alpha1.VirtualServiceMergeList{}
+			if err := r.Client().List(context.TODO(), vsmegeList, &client.ListOptions{
+				Namespace: vs.GetNamespace(),
+			}); err != nil {
+				panic(err)
+			}
+			for _, vsmerge := range vsmegeList.Items {
+				targetNamespace := vsmerge.Spec.Target.Namespace
+				if targetNamespace == "" {
+					targetNamespace = vsmerge.GetNamespace()
+				}
+				// only look for vs that is a target for any of the merge
+				if vsmerge.Spec.Target.Name == vs.GetName() && targetNamespace == vs.GetNamespace() {
+					request := reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Namespace: vsmerge.GetNamespace(),
+							Name:      vsmerge.GetName(),
+						},
+					}
+					requests = append(requests, request)
+				}
+			}
+			return requests
+		})).
 		Complete(r)
 }
 
