@@ -32,7 +32,7 @@ const (
 	finalizerName = "istiomerger.monime.sl-finalizer"
 )
 
-func Reconcile(ctx reconciler.Context, client *versionedclient.Clientset, patch *v1alpha1.VirtualServiceMerge) error {
+func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *v1alpha1.VirtualServiceMerge) error {
 	if patch.DeletionTimestamp.IsZero() {
 		if !oputil.ContainsWithPrefix(patch.Finalizers, finalizerName) {
 			ctx.Logger().Info("Adding the finalizer to the patch",
@@ -42,11 +42,11 @@ func Reconcile(ctx reconciler.Context, client *versionedclient.Clientset, patch 
 		}
 	} else if oputil.Contains(patch.Finalizers, finalizerName) {
 		if err := updateTarget(client, patch, true); err != nil {
-			if kerr.IsNotFound(err) {
-				// do not need to panic just log output
-				ctx.Logger().Info("Virtual service not found.")
+			if !kerr.IsNotFound(err) {
+				// ignore if virtuals service is not found
+				panic(err)
 			} else {
-				return err
+				ctx.Logger().Info("Virtual service not found. Nothing to sync.")
 			}
 		}
 		patch.Finalizers = oputil.Remove(finalizerName, patch.Finalizers)
@@ -57,7 +57,12 @@ func Reconcile(ctx reconciler.Context, client *versionedclient.Clientset, patch 
 	}
 	if patch.ResourceVersion != patch.Status.HandledRevision {
 		if err := updateTarget(client, patch, false); err != nil {
-			return err
+			if !kerr.IsNotFound(err) {
+				// ignore if virtuals service is not found
+				panic(err)
+			} else {
+				ctx.Logger().Info("Virtual service not found. Nothing to sync.")
+			}
 		}
 		patch.Status.HandledRevision = patch.ResourceVersion
 		if err := ctx.Client().Status().Update(context.TODO(), patch); err != nil {
@@ -68,7 +73,7 @@ func Reconcile(ctx reconciler.Context, client *versionedclient.Clientset, patch 
 	return nil
 }
 
-func updateTarget(client *versionedclient.Clientset, patch *v1alpha1.VirtualServiceMerge, remove bool) error {
+func updateTarget(client versionedclient.Interface, patch *v1alpha1.VirtualServiceMerge, remove bool) error {
 	if err := patch.Spec.Target.Validate(); err != nil {
 		return fmt.Errorf("virtualservicepatch.Reconcile: %w", err)
 	}
@@ -90,7 +95,7 @@ func updateTarget(client *versionedclient.Clientset, patch *v1alpha1.VirtualServ
 		patch.AddTlsRoutes(target)
 		patch.AddHttpRoutes(target)
 	}
-	if target, err = client.NetworkingV1alpha3().VirtualServices(targetNamespace).
+	if _, err = client.NetworkingV1alpha3().VirtualServices(targetNamespace).
 		Update(context.TODO(), target, metav1.UpdateOptions{}); err != nil {
 		return err
 	}

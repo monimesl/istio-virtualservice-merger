@@ -134,7 +134,7 @@ CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen-arm64
+CONTROLLER_GEN_ARM64 = $(shell pwd)/bin/controller-gen-arm64
 controller-gen-arm64: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
@@ -211,3 +211,12 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+generate-mocks:
+	mockgen -package mocks  istio.io/client-go/pkg/clientset/versioned/typed/networking/v1alpha3 NetworkingV1alpha3Interface,VirtualServicesGetter,VirtualServiceInterface  > tests/mocks/mock_istio.go &&\
+	mockgen -package mocks  sigs.k8s.io/controller-runtime/pkg/client Client  > tests/mocks/mock_client.go &&\
+	mockgen -package mocks  github.com/go-logr/logr Logger  > tests/mocks/mock_logger.go &&\
+	mockgen -package mocks  github.com/monimesl/operator-helper/reconciler Context  > tests/mocks/mock_reconciler_context.go &&\
+	mockgen -package mocks  istio.io/client-go/pkg/clientset/versioned Interface  > tests/mocks/mock_clientset.go 
+	
+

@@ -1,0 +1,19 @@
+
+apiVersion: istiomerger.monime.sl/v1alpha1
+kind: VirtualServiceMerge
+metadata:
+  name: review-routes
+spec:
+  target:
+    name: "integration-test" 
+  patch: 
+    http:
+      - match:
+          - uri:
+              prefix: "/reviews"
+        route:
+          - destination:
+              port:
+                number: 8080
+              host: "review-service"
+
