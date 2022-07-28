@@ -20,6 +20,7 @@ WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
+COPY bin/ bin/
 COPY hack hack/
 COPY Makefile Makefile
 # cache deps before building and copying source so that we don't need to re-download as much
