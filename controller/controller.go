@@ -23,6 +23,7 @@ import (
 	"github.com/monimesl/operator-helper/reconciler"
 	istio "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -78,6 +79,14 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request reconcile.Request) (reconcile.Result, error) {
 	patch := &v1alpha1.VirtualServiceMerge{}
 	return r.Run(request, patch, func(_ bool) error {
-		return Reconcile(r.Context, r.IstioClient, patch)
+		if err := Reconcile(r.Context, r.IstioClient, patch); err != nil {
+			if kerr.IsNotFound(err) {
+				// do not need to panic just log output
+				r.Context.Logger().Info("Virtual service not found. Nothing to sync.")
+				return nil
+			}
+			return err
+		}
+		return nil
 	})
 }

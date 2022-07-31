@@ -76,13 +76,7 @@ help: ## Display this help.
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-manifests-arm64: controller-gen-arm64 ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-generate-arm64: controller-gen-arm64 ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 fmt: ## Run go fmt against code.
@@ -100,9 +94,6 @@ test: manifests generate fmt vet ## Run tests.
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
-
-build-arm64: generate-arm64 fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -132,11 +123,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
-
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen-arm64
-controller-gen-arm64: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2)
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
@@ -211,3 +198,12 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+generate-mocks:
+	mockgen -package mocks  istio.io/client-go/pkg/clientset/versioned/typed/networking/v1alpha3 NetworkingV1alpha3Interface,VirtualServicesGetter,VirtualServiceInterface  > tests/mocks/mock_istio.go &&\
+	mockgen -package mocks  sigs.k8s.io/controller-runtime/pkg/client Client  > tests/mocks/mock_client.go &&\
+	mockgen -package mocks  github.com/go-logr/logr Logger  > tests/mocks/mock_logger.go &&\
+	mockgen -package mocks  github.com/monimesl/operator-helper/reconciler Context  > tests/mocks/mock_reconciler_context.go &&\
+	mockgen -package mocks  istio.io/client-go/pkg/clientset/versioned Interface  > tests/mocks/mock_clientset.go 
+	
+

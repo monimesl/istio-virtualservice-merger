@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: integration-test
+spec:
+  gateways:
+    - "mesh"
+  hosts:
+    - "integration.test.com"
+  http:
+  - timeout: 5s
+    route:
+    - destination:
+        host: "integration.test.com"
+
+    

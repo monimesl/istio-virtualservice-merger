@@ -1,0 +1,17 @@
+apiVersion: istiomerger.monime.sl/v1alpha1
+kind: VirtualServiceMerge
+metadata:
+  name: product-routes
+spec:
+  target:
+    name: "integration-test" 
+  patch: 
+    http:
+      - match:
+          - uri:
+              prefix: "/products"
+        route:
+          - destination:
+              port:
+                number: 8080
+              host: "product-service"
