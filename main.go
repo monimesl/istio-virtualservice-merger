@@ -32,6 +32,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -75,7 +76,7 @@ func main() {
 		log.Fatalf("Failed to create istio client: %s", err)
 	}
 	if err = reconciler.Configure(mgr,
-		&controllers.VirtualServicePatchReconciler{IstioClient: ic}); err != nil {
+		&controllers.VirtualServicePatchReconciler{IstioClient: ic, OldObjectCache: cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})}); err != nil {
 		log.Fatalf("reconciler cfg error: %s", err)
 	}
 	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {

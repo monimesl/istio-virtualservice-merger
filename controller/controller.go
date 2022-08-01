@@ -25,7 +25,10 @@ import (
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -33,13 +36,40 @@ import (
 
 type VirtualServicePatchReconciler struct {
 	reconciler.Context
-	IstioClient *versionedclient.Clientset
+	IstioClient    *versionedclient.Clientset
+	OldObjectCache cache.Indexer
 }
 
 func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error {
 	r.Context = ctx
 	return ctx.NewControllerBuilder().
-		For(&v1alpha1.VirtualServiceMerge{}).
+		Watches(&source.Kind{Type: &v1alpha1.VirtualServiceMerge{}}, handler.Funcs{
+			CreateFunc: func(e event.CreateEvent, q workqueue.RateLimitingInterface) {
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      e.Object.GetName(),
+					Namespace: e.Object.GetNamespace(),
+				}})
+			},
+			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				r.OldObjectCache.Add(e.ObjectOld)
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      e.ObjectNew.GetName(),
+					Namespace: e.ObjectNew.GetNamespace(),
+				}})
+			},
+			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      e.Object.GetName(),
+					Namespace: e.Object.GetNamespace(),
+				}})
+			},
+			GenericFunc: func(e event.GenericEvent, q workqueue.RateLimitingInterface) {
+				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      e.Object.GetName(),
+					Namespace: e.Object.GetNamespace(),
+				}})
+			},
+		}).
 		Watches(&source.Kind{Type: &istio.VirtualService{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) [](reconcile.Request) {
 			vs := obj.(*istio.VirtualService)
 			requests := make([]reconcile.Request, 0)
@@ -78,14 +108,33 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 
 func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request reconcile.Request) (reconcile.Result, error) {
 	patch := &v1alpha1.VirtualServiceMerge{}
+	oldObj, exists, err := r.OldObjectCache.GetByKey(request.NamespacedName.String())
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	return r.Run(request, patch, func(_ bool) error {
-		if err := Reconcile(r.Context, r.IstioClient, patch); err != nil {
-			if kerr.IsNotFound(err) {
-				// do not need to panic just log output
-				r.Context.Logger().Info("Virtual service not found. Nothing to sync.")
-				return nil
+		if exists {
+			if err := Reconcile(r.Context, r.IstioClient, patch, oldObj); err != nil {
+				if kerr.IsNotFound(err) {
+					// do not need to panic just log output
+					r.Context.Logger().Info("Virtual service not found. Nothing to sync.")
+					// update completed, remove key from cache
+					r.OldObjectCache.Delete(oldObj)
+					return nil
+				}
+				return err
 			}
-			return err
+			// update completed, remove key from cache
+			r.OldObjectCache.Delete(oldObj)
+		} else {
+			if err := Reconcile(r.Context, r.IstioClient, patch, nil); err != nil {
+				if kerr.IsNotFound(err) {
+					// do not need to panic just log output
+					r.Context.Logger().Info("Virtual service not found. Nothing to sync.")
+					return nil
+				}
+				return err
+			}
 		}
 		return nil
 	})

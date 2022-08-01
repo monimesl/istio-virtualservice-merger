@@ -98,7 +98,7 @@ var _ = Describe("Reconciler", func() {
 				mock_reconciler_context.EXPECT().Logger().Return(mock_logger).AnyTimes()
 
 				// mock_clientset.EXPECT().Logger()
-				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge)
+				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge, nil)
 
 				Expect(err).To(BeNil())
 			},
@@ -119,7 +119,7 @@ var _ = Describe("Reconciler", func() {
 				mock_reconciler_context.EXPECT().Client().Return(mock_client)
 
 				// mock_clientset.EXPECT().Logger()
-				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge)
+				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge, nil)
 
 				Expect(err).To(BeNil())
 			},
@@ -154,7 +154,7 @@ var _ = Describe("Reconciler", func() {
 				mock_clientset.EXPECT().NetworkingV1alpha3().Return(mock_network_client).AnyTimes()
 
 				// mock_clientset.EXPECT().Logger()
-				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge)
+				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge, nil)
 
 				Expect(err).To(BeNil())
 			},
@@ -181,7 +181,7 @@ var _ = Describe("Reconciler", func() {
 
 				// mock_clientset.EXPECT().Logger()
 				Expect(func() {
-					_ = Reconcile(mock_reconciler_context, mock_clientset, &vsMerge)
+					_ = Reconcile(mock_reconciler_context, mock_clientset, &vsMerge, nil)
 				}).To(PanicWith(e))
 			},
 			Entry("for 'bad request' error", kerr.NewBadRequest("bad request")),

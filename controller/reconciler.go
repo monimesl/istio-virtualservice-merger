@@ -32,7 +32,32 @@ const (
 	finalizerName = "istiomerger.monime.sl-finalizer"
 )
 
-func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *v1alpha1.VirtualServiceMerge) error {
+func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *v1alpha1.VirtualServiceMerge, oldpatchref interface{}) error {
+	if oldpatchref != nil {
+		oldpatch := oldpatchref.(*v1alpha1.VirtualServiceMerge)
+		// check if target is different
+		oldTargetName, oldTargetNamespace := oldpatch.Spec.Target.Name, oldpatch.Spec.Target.Namespace
+		newTargetName, newTargetNamespace := patch.Spec.Target.Name, patch.Spec.Target.Namespace
+		if oldTargetNamespace == "" {
+			oldTargetNamespace = oldpatch.Namespace
+		}
+		if newTargetNamespace == "" {
+			newTargetNamespace = patch.Namespace
+		}
+		if oldTargetName != newTargetName || oldTargetNamespace != newTargetNamespace {
+			// remove from this object
+			ctx.Logger().Info("Virtual service target changed. Removing patch from old target", "virtualservice", oldTargetNamespace+"/"+oldTargetName)
+			if err := updateTarget(client, oldpatch, true); err != nil {
+				if kerr.IsNotFound(err) {
+					// ignore if virtuals service is not found
+					ctx.Logger().Info("Virtual service not found. Nothing to sync.")
+				} else {
+					panic(err)
+				}
+			}
+		}
+	}
+
 	if patch.DeletionTimestamp.IsZero() {
 		if !oputil.ContainsWithPrefix(patch.Finalizers, finalizerName) {
 			ctx.Logger().Info("Adding the finalizer to the patch",
