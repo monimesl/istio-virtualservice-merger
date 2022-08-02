@@ -26,10 +26,11 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -43,33 +44,23 @@ type VirtualServicePatchReconciler struct {
 func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error {
 	r.Context = ctx
 	return ctx.NewControllerBuilder().
-		Watches(&source.Kind{Type: &v1alpha1.VirtualServiceMerge{}}, handler.Funcs{
-			CreateFunc: func(e event.CreateEvent, q workqueue.RateLimitingInterface) {
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      e.Object.GetName(),
-					Namespace: e.Object.GetNamespace(),
-				}})
+		For(&v1alpha1.VirtualServiceMerge{}, builder.WithPredicates(
+			predicate.Funcs{
+				CreateFunc: func(e event.CreateEvent) bool {
+					return true
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					r.OldObjectCache.Add(e.ObjectOld)
+					return true
+				},
+				DeleteFunc: func(e event.DeleteEvent) bool {
+					return true
+				},
+				GenericFunc: func(e event.GenericEvent) bool {
+					return true
+				},
 			},
-			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				r.OldObjectCache.Add(e.ObjectOld)
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      e.ObjectNew.GetName(),
-					Namespace: e.ObjectNew.GetNamespace(),
-				}})
-			},
-			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      e.Object.GetName(),
-					Namespace: e.Object.GetNamespace(),
-				}})
-			},
-			GenericFunc: func(e event.GenericEvent, q workqueue.RateLimitingInterface) {
-				q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      e.Object.GetName(),
-					Namespace: e.Object.GetNamespace(),
-				}})
-			},
-		}).
+		)).
 		Watches(&source.Kind{Type: &istio.VirtualService{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) [](reconcile.Request) {
 			vs := obj.(*istio.VirtualService)
 			requests := make([]reconcile.Request, 0)
