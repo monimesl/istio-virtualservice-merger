@@ -103,7 +103,7 @@ func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request rec
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	return r.Run(request, patch, func(_ bool) error {
+	result, err := r.Run(request, patch, func(_ bool) error {
 		if exists {
 			if err := Reconcile(r.Context, r.IstioClient, patch, oldObj); err != nil {
 				if kerr.IsNotFound(err) {
@@ -129,4 +129,5 @@ func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request rec
 		}
 		return nil
 	})
+	return result, err
 }

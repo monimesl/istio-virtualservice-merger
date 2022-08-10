@@ -47,6 +47,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1alpha3.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -67,6 +68,8 @@ func main() {
 	cfg, options := config.GetManagerParams(scheme,
 		namespace,
 		"istiomerger.monime.sl")
+	//set metrics server address & port
+	options.MetricsBindAddress = ":8080"
 	mgr, err := manager.New(cfg, options)
 	if err != nil {
 		log.Fatalf("manager create error: %s", err)
