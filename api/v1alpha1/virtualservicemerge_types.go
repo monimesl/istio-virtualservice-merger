@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"fmt"
 	"github.com/monimesl/operator-helper/reconciler"
+	"go.uber.org/zap"
 	"istio.io/api/networking/v1alpha3"
 	alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -197,24 +198,33 @@ func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1a
 func parsePrecedence(ctx reconciler.Context, name string) (string, int64) {
 	parts := strings.Split(name, "-")
 	if len(parts) == 1 {
-		return "", 0
+		return name, 0
 	}
-	orderStr := parts[len(parts)-1]
-	order, err := strconv.ParseInt(orderStr, 10, 64)
+	precedenceStr := parts[len(parts)-1]
+	precedence, err := strconv.ParseInt(precedenceStr, 10, 64)
 	if err != nil {
-		ctx.Logger().Error(err, "Bad order for route", "name", name, "order", orderStr)
-		return orderStr, 0
+		ctx.Logger().Error(err, "Bad precedence for route. Was expecting an integer",
+			"name", name, "precedence", precedenceStr)
+		return precedenceStr, 0
 	}
-	return orderStr, order
+	return precedenceStr, precedence
 }
 
 func (in *VirtualServiceMerge) generateHttpRoutes() []*v1alpha3.HTTPRoute {
 	routes := make([]*v1alpha3.HTTPRoute, len(in.Spec.Patch.Http))
+	routesCount := len(in.Spec.Patch.Http)
 	for i, r := range in.Spec.Patch.Http {
-		if r.Name == "" {
-			r.Name = fmt.Sprintf("%s-%d", in.Name, i)
+		name := r.Name
+		precedence, err := strconv.ParseInt(r.Name, 10, 64)
+		if err == nil {
+			r.Name = fmt.Sprintf("%s-%d", in.Name, precedence)
+		} else if r.Name == "" {
+			// make the precedence decrease as we go down the list.
+			precedence = int64(routesCount - i - 1)
+			r.Name = fmt.Sprintf("%s-%d", in.Name, precedence)
 		}
 		routes[i] = r
+		zap.S().Info("The patch '%s' route '%s' rewritten to '%s'", in.Name, name, r.Name)
 	}
 	return routes
 }
