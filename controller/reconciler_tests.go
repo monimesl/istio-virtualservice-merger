@@ -180,9 +180,8 @@ var _ = Describe("Reconciler", func() {
 				mock_clientset.EXPECT().NetworkingV1alpha3().Return(mock_network_client).AnyTimes()
 
 				// mock_clientset.EXPECT().Logger()
-				Expect(func() {
-					_ = Reconcile(mock_reconciler_context, mock_clientset, &vsMerge, nil)
-				}).To(PanicWith(e))
+				err := Reconcile(mock_reconciler_context, mock_clientset, &vsMerge, nil)
+				Expect(err).To(Equal(e))
 			},
 			Entry("for 'bad request' error", kerr.NewBadRequest("bad request")),
 			Entry("for 'content expired' error", kerr.NewResourceExpired("expired")),
