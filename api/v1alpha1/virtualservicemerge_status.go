@@ -21,8 +21,3 @@ type VirtualServicePatchStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	HandledRevision string `json:"HandledRevision,omitempty"`
 }
-
-// setDefaults set the defaults for the cluster status and returns true otherwise false
-func (in *VirtualServicePatchStatus) setDefaults() (changed bool) {
-	return
-}

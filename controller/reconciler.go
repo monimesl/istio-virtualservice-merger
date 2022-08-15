@@ -98,7 +98,7 @@ func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *
 	return nil
 }
 
-func updateTarget(client versionedclient.Interface, patch *v1alpha1.VirtualServiceMerge, remove bool) error {
+func updateTarget(ctx reconciler.Context, client *versionedclient.Clientset, patch *v1alpha1.VirtualServiceMerge, remove bool) error {
 	if err := patch.Spec.Target.Validate(); err != nil {
 		return fmt.Errorf("virtualservicepatch.Reconcile: %w", err)
 	}
@@ -114,11 +114,11 @@ func updateTarget(client versionedclient.Interface, patch *v1alpha1.VirtualServi
 	if remove {
 		patch.RemoveTcpRoutes(target)
 		patch.RemoveTlsRoutes(target)
-		patch.RemoveHttpRoutes(target)
+		patch.RemoveHttpRoutes(ctx, target)
 	} else {
 		patch.AddTcpRoutes(target)
 		patch.AddTlsRoutes(target)
-		patch.AddHttpRoutes(target)
+		patch.AddHttpRoutes(ctx, target)
 	}
 	if _, err = client.NetworkingV1alpha3().VirtualServices(targetNamespace).
 		Update(context.TODO(), target, metav1.UpdateOptions{}); err != nil {
