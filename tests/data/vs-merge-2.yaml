@@ -4,8 +4,8 @@ metadata:
   name: product-routes
 spec:
   target:
-    name: "integration-test" 
-  patch: 
+    name: "integration-test"
+  patch:
     http:
       - match:
           - uri:
