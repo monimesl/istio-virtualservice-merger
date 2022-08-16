@@ -47,9 +47,9 @@ func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *
 		if oldTargetName != newTargetName || oldTargetNamespace != newTargetNamespace {
 			// remove from this object
 			ctx.Logger().Info("Virtual service target changed. Removing patch from old target", "virtualservice", oldTargetNamespace+"/"+oldTargetName)
-			if err := updateTarget(client, oldpatch, true); err != nil {
+			if err := updateTarget(ctx, client, oldpatch, true); err != nil {
 				if kerr.IsNotFound(err) {
-					// ignore if virtuals service is not found
+					// ignore if virtualservice is not found
 					ctx.Logger().Info("Virtual service not found. Nothing to sync.")
 				} else {
 					return err
@@ -66,9 +66,9 @@ func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *
 			return ctx.Client().Update(context.TODO(), patch)
 		}
 	} else if oputil.Contains(patch.Finalizers, finalizerName) {
-		if err := updateTarget(client, patch, true); err != nil {
+		if err := updateTarget(ctx, client, patch, true); err != nil {
 			if kerr.IsNotFound(err) {
-				// ignore if virtuals service is not found
+				// ignore if virtualservice is not found
 				ctx.Logger().Info("Virtual service not found. Nothing to sync.")
 			} else {
 				return err
@@ -81,9 +81,9 @@ func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *
 		return nil
 	}
 	if patch.ResourceVersion != patch.Status.HandledRevision {
-		if err := updateTarget(client, patch, false); err != nil {
+		if err := updateTarget(ctx, client, patch, false); err != nil {
 			if kerr.IsNotFound(err) {
-				// ignore if virtuals service is not found
+				// ignore if virtualservice is not found
 				ctx.Logger().Info("Virtual service not found. Nothing to sync.")
 			} else {
 				return err
@@ -98,7 +98,7 @@ func Reconcile(ctx reconciler.Context, client versionedclient.Interface, patch *
 	return nil
 }
 
-func updateTarget(ctx reconciler.Context, client *versionedclient.Clientset, patch *v1alpha1.VirtualServiceMerge, remove bool) error {
+func updateTarget(ctx reconciler.Context, client versionedclient.Interface, patch *v1alpha1.VirtualServiceMerge, remove bool) error {
 	if err := patch.Spec.Target.Validate(); err != nil {
 		return fmt.Errorf("virtualservicepatch.Reconcile: %w", err)
 	}
