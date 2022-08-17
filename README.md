@@ -100,7 +100,7 @@ spec:
     - match:
         - uri:
             prefix: "/reviews"
-      name: review-routes-0
+      name: review-routes-0 # 0 is the precedence
       route:
         - destination:
             port:
@@ -109,7 +109,9 @@ spec:
     - match:
         - uri:
             prefix: "/products"
-      name: product-routes-0
+      # 1 is the precedence, 'product-routes' route will appear before any routes with lesser 
+      # precedence that were merged onto the target even if they're from a different patch.      
+      name: product-routes-1
       route:
         - destination:
             port:

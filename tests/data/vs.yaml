@@ -8,9 +8,9 @@ spec:
   hosts:
     - "integration.test.com"
   http:
-  - timeout: 5s
-    route:
-    - destination:
-        host: "integration.test.com"
+    - timeout: 5s
+      route:
+        - destination:
+            host: "integration.test.com"
 
     
