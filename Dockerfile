@@ -20,7 +20,6 @@ WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
-COPY bin/ bin/
 COPY hack hack/
 COPY Makefile Makefile
 # cache deps before building and copying source so that we don't need to re-download as much
@@ -31,7 +30,6 @@ RUN go mod download
 COPY main.go main.go
 COPY api api/
 COPY controller controller/
-COPY tests/ tests/
 
 # Run after copying so the files are generated into
 # the docker's api/ folder instead of the host

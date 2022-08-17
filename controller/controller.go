@@ -50,7 +50,7 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 					return true
 				},
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					r.OldObjectCache.Add(e.ObjectOld)
+					_ = r.OldObjectCache.Add(e.ObjectOld)
 					return true
 				},
 				DeleteFunc: func(e event.DeleteEvent) bool {
@@ -61,7 +61,7 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 				},
 			},
 		)).
-		Watches(&source.Kind{Type: &istio.VirtualService{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) [](reconcile.Request) {
+		Watches(&source.Kind{Type: &istio.VirtualService{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
 			vs := obj.(*istio.VirtualService)
 			requests := make([]reconcile.Request, 0)
 
@@ -69,7 +69,7 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 			if !vs.GetDeletionTimestamp().IsZero() {
 				return requests
 			}
-			// get all virtual service merge whos target is this virtual service
+			// get all virtual service merge whose target is this virtual service
 			vsmegeList := &v1alpha1.VirtualServiceMergeList{}
 			if err := r.Client().List(context.TODO(), vsmegeList, &client.ListOptions{
 				Namespace: vs.GetNamespace(),
@@ -110,13 +110,13 @@ func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request rec
 					// do not need to panic just log output
 					r.Context.Logger().Info("Virtual service not found. Nothing to sync.")
 					// update completed, remove key from cache
-					r.OldObjectCache.Delete(oldObj)
+					_ = r.OldObjectCache.Delete(oldObj)
 					return nil
 				}
 				return err
 			}
 			// update completed, remove key from cache
-			r.OldObjectCache.Delete(oldObj)
+			_ = r.OldObjectCache.Delete(oldObj)
 		} else {
 			if err := Reconcile(r.Context, r.IstioClient, patch, nil); err != nil {
 				if kerr.IsNotFound(err) {
