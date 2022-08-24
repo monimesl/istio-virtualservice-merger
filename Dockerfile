@@ -30,7 +30,6 @@ RUN go mod download
 COPY main.go main.go
 COPY api api/
 COPY controller controller/
-COPY tests/ tests/
 
 # Run after copying so the files are generated into
 # the docker's api/ folder instead of the host
