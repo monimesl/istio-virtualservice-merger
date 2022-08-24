@@ -1,8 +1,6 @@
 name: Operator Build
 on:
-  push:
-    branches:
-      - main
+  - push
 jobs:
   build:
     name: Build & Push
@@ -47,7 +45,7 @@ jobs:
       - uses: docker/build-push-action@v2
         name: Build and Deploy
         with:
-          push: true
+          push: false
           tags: ${{ steps.prepare.outputs.tags }}
           labels: |
             org.opencontainers.image.title=${{ github.event.repository.name }}
