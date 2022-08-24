@@ -29,7 +29,9 @@ RUN go mod download
 # Copy the go source
 COPY main.go main.go
 COPY api api/
-COPY controller controller/
+COPY controller/controller.go controller/controller.go
+COPY controller/reconciler.go controller/reconciler.go
+
 
 # Run after copying so the files are generated into
 # the docker's api/ folder instead of the host

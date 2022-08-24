@@ -229,4 +229,6 @@ generate-mocks:
 	mockgen -package mocks  github.com/monimesl/operator-helper/reconciler Context  > tests/mocks/mock_reconciler_context.go &&\
 	mockgen -package mocks  istio.io/client-go/pkg/clientset/versioned Interface  > tests/mocks/mock_clientset.go 
 	
-
+clean:
+	rm -rf bin/
+	rm -rf config/crd/bases
