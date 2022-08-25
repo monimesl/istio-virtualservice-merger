@@ -152,8 +152,7 @@ outer:
 		// add
 		targetRoutes = append(targetRoutes, pRoute)
 	}
-	//target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
-	target.Spec.Http = targetRoutes
+	target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
 }
 
 func (in *VirtualServiceMerge) RemoveHttpRoutes(ctx reconciler.Context, target *alpha3.VirtualService) {
@@ -169,8 +168,7 @@ outer:
 			}
 		}
 	}
-	// target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
-	target.Spec.Http = targetRoutes
+	target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
 }
 
 func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1alpha3.HTTPRoute {
@@ -181,7 +179,7 @@ func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1a
 	})
 	routeByNamePart := map[string]bool{}
 	for i, route := range routes {
-		name, _ := parsePrecedence(ctx, route.Name)
+		name := route.Name
 		if !routeByNamePart[name] {
 			routeByNamePart[name] = true
 			continue
