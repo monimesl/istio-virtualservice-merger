@@ -152,7 +152,8 @@ outer:
 		// add
 		targetRoutes = append(targetRoutes, pRoute)
 	}
-	target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
+	//target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
+	target.Spec.Http = targetRoutes
 }
 
 func (in *VirtualServiceMerge) RemoveHttpRoutes(ctx reconciler.Context, target *alpha3.VirtualService) {
@@ -168,7 +169,8 @@ outer:
 			}
 		}
 	}
-	target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
+	// target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
+	target.Spec.Http = targetRoutes
 }
 
 func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1alpha3.HTTPRoute {
