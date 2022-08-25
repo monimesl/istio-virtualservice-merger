@@ -179,7 +179,7 @@ func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1a
 	})
 	routeByNamePart := map[string]bool{}
 	for i, route := range routes {
-		name, _ := parsePrecedence(ctx, route.Name)
+		name := route.Name
 		if !routeByNamePart[name] {
 			routeByNamePart[name] = true
 			continue
