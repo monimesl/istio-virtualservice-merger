@@ -185,14 +185,14 @@ func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1a
 
 func parsePrecedence(ctx reconciler.Context, name string) (string, int, bool) {
 	parts := strings.Split(name, "-")
-	if len(parts) == 1 {
+	if len(parts) <= 1 {
 		return name, 0, false
 	}
 	precedenceStr := parts[len(parts)-1]
 	precedence, err := strconv.ParseInt(precedenceStr, 10, 64)
 	if err != nil {
-		ctx.Logger().Info("No precedence for route; defaulting to 0", "route", name)
-		return precedenceStr, 0, false
+		ctx.Logger().Info("No precedence for route. Defaulting to 0", "route", name)
+		return name, 0, false
 	}
 	return strings.Join(parts[:len(parts)-1], "-"), int(precedence), true
 }
