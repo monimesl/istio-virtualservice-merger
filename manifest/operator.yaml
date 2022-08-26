@@ -7,7 +7,7 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: istio-merger-operator
+  namespace: istio-virtualservice-merger
   name: istio-virtualservice-merger
 ---
 # permissions to do leader election.
@@ -15,7 +15,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: istio-virtualservice-merger-leader-election-role
-  namespace: istio-merger-operator
+  namespace: istio-virtualservice-merger
 rules:
   - apiGroups:
       - ""
@@ -53,7 +53,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: istio-virtualservice-merger-leader-election-rolebinding
-  namespace: istio-merger-operator
+  namespace: istio-virtualservice-merger
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -61,7 +61,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: istio-virtualservice-merger
-    namespace: istio-merger-operator
+    namespace: istio-virtualservice-merger
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -125,13 +125,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: istio-virtualservice-merger
-    namespace: istio-merger-operator
+    namespace: istio-virtualservice-merger
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: istio-virtualservice-merger
-  namespace: istio-merger-operator
+  namespace: istio-virtualservice-merger
   labels:
     app: istio-virtualservice-merger
 spec:
