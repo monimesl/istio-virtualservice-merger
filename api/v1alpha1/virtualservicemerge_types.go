@@ -140,7 +140,7 @@ func tlsMatchesEqual(sourceMatches []*v1alpha3.TLSMatchAttributes, match2 []*v1a
 
 func (in *VirtualServiceMerge) AddHttpRoutes(ctx reconciler.Context, target *alpha3.VirtualService) {
 	targetRoutes := target.Spec.Http
-	patchRoutes := in.generateHttpRoutes()
+	patchRoutes := in.generateHttpRoutes(ctx)
 outer:
 	for _, pRoute := range patchRoutes {
 		for i, tRoute := range targetRoutes {
@@ -149,15 +149,18 @@ outer:
 				continue outer
 			}
 		}
-		// add
+		// add - prepend to the slice just so that the new route is above
+		// the "default", i.e. no a matchspec route already in the targeted vs.
 		targetRoutes = append(targetRoutes, pRoute)
+		copy(targetRoutes[1:], targetRoutes)
+		targetRoutes[0] = pRoute
 	}
 	target.Spec.Http = sanitizeRoutes(ctx, targetRoutes)
 }
 
 func (in *VirtualServiceMerge) RemoveHttpRoutes(ctx reconciler.Context, target *alpha3.VirtualService) {
 	targetRoutes := target.Spec.Http
-	patchRoutes := in.generateHttpRoutes()
+	patchRoutes := in.generateHttpRoutes(ctx)
 outer:
 	for _, pRoute := range patchRoutes {
 		for i, tRoute := range targetRoutes {
@@ -173,54 +176,39 @@ outer:
 
 func sanitizeRoutes(ctx reconciler.Context, routes []*v1alpha3.HTTPRoute) []*v1alpha3.HTTPRoute {
 	sort.SliceStable(routes, func(i, j int) bool {
-		_, iPrecedence := parsePrecedence(ctx, routes[i].Name)
-		_, jPrecedence := parsePrecedence(ctx, routes[j].Name)
+		_, iPrecedence, _ := parsePrecedence(ctx, routes[i].Name)
+		_, jPrecedence, _ := parsePrecedence(ctx, routes[j].Name)
 		return iPrecedence > jPrecedence
 	})
-	routeByNamePart := map[string]bool{}
-	for i, route := range routes {
-		name, _ := parsePrecedence(ctx, route.Name)
-		if !routeByNamePart[name] {
-			routeByNamePart[name] = true
-			continue
-		}
-		ctx.Logger().Info("Dropping the duplicate route name prefix",
-			"prefix", name, "route", route.Name)
-		if (i + 1) < len(routes) { // the ith position is not the last
-			routes = append(routes[0:i], routes[i+1:]...)
-		} else {
-			routes = routes[0:i]
-		}
-	}
 	return routes
 }
 
-func parsePrecedence(ctx reconciler.Context, name string) (string, int64) {
+func parsePrecedence(ctx reconciler.Context, name string) (string, int, bool) {
 	parts := strings.Split(name, "-")
 	if len(parts) == 1 {
-		return name, 0
+		return name, 0, false
 	}
 	precedenceStr := parts[len(parts)-1]
 	precedence, err := strconv.ParseInt(precedenceStr, 10, 64)
 	if err != nil {
-		ctx.Logger().Error(err, "Bad precedence for route. Was expecting an integer",
-			"name", name, "precedence", precedenceStr)
-		return precedenceStr, 0
+		ctx.Logger().Info("No precedence for route; defaulting to 0", "route", name)
+		return precedenceStr, 0, false
 	}
-	return precedenceStr, precedence
+	return strings.Join(parts[:len(parts)-1], "-"), int(precedence), true
 }
 
-func (in *VirtualServiceMerge) generateHttpRoutes() []*v1alpha3.HTTPRoute {
+func (in *VirtualServiceMerge) generateHttpRoutes(ctx reconciler.Context) []*v1alpha3.HTTPRoute {
 	routes := make([]*v1alpha3.HTTPRoute, len(in.Spec.Patch.Http))
 	routesCount := len(in.Spec.Patch.Http)
 	for i, r := range in.Spec.Patch.Http {
 		name := r.Name
-		precedence, err := strconv.ParseInt(r.Name, 10, 64)
-		if err == nil {
-			r.Name = fmt.Sprintf("%s-%d", in.Name, precedence)
-		} else if r.Name == "" {
+		if r.Name == "" {
 			// make the precedence decrease as we go down the list.
-			precedence = int64(routesCount - i - 1)
+			precedence := int64(routesCount - i - 1)
+			r.Name = fmt.Sprintf("%s-%d", in.Name, precedence)
+		} else if _, _, ok := parsePrecedence(ctx, r.Name); !ok {
+			// make the precedence decrease as we go down the list.
+			precedence := int64(routesCount - i - 1)
 			r.Name = fmt.Sprintf("%s-%d", in.Name, precedence)
 		}
 		routes[i] = r
