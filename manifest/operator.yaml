@@ -86,6 +86,7 @@ rules:
       - virtualservicemerges/status
     verbs:
       - get
+      - list
       - patch
       - update
   - apiGroups:
@@ -94,6 +95,7 @@ rules:
       - virtualservices
     verbs:
       - get
+      - list
       - update
   - apiGroups:
       - ""
