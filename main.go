@@ -79,7 +79,11 @@ func main() {
 		log.Fatalf("Failed to create istio client: %s", err)
 	}
 	if err = reconciler.Configure(mgr,
-		&controllers.VirtualServicePatchReconciler{IstioClient: ic, OldObjectCache: cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})}); err != nil {
+		&controllers.VirtualServicePatchReconciler{
+			IstioClient: ic, 
+			OldObjectCache: cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{}), 
+			EventRecorder: mgr.GetEventRecorderFor("istio-virtualservice-merger-controller"),
+		}); err != nil {
 		log.Fatalf("reconciler cfg error: %s", err)
 	}
 	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {

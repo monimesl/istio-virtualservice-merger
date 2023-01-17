@@ -20,4 +20,5 @@ package v1alpha1
 type VirtualServicePatchStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	HandledRevision string `json:"HandledRevision,omitempty"`
+	Error string `json:"Error,omitempty"`
 }

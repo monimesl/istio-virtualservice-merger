@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/monimesl/istio-virtualservice-merger/api/v1alpha1"
 	"github.com/monimesl/operator-helper/reconciler"
@@ -26,6 +27,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -37,6 +39,7 @@ import (
 
 type VirtualServicePatchReconciler struct {
 	reconciler.Context
+	record.EventRecorder
 	IstioClient    *versionedclient.Clientset
 	OldObjectCache cache.Indexer
 }
@@ -97,7 +100,7 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 		Complete(r)
 }
 
-func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *VirtualServicePatchReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	patch := &v1alpha1.VirtualServiceMerge{}
 	oldObj, exists, err := r.OldObjectCache.GetByKey(request.NamespacedName.String())
 	if err != nil {
@@ -129,5 +132,20 @@ func (r *VirtualServicePatchReconciler) Reconcile(_ context.Context, request rec
 		}
 		return nil
 	})
+
+	if err != nil {
+		//trigger event
+		r.EventRecorder.Event(patch, "Warning", "ReconciliationFailed", fmt.Sprintf("VirtualServiceMerge reconcile error: %s", err.Error()))
+
+		//update status
+		patch.Status.Error = patch.ResourceVersion
+		if err := r.Context.Client().Status().Update(ctx, patch); err != nil {
+			r.Context.Logger().Error(err, fmt.Sprintf("VirtualServiceMerge object (%s) status update error", patch.Name))
+
+			//trigger event
+			r.EventRecorder.Event(patch, "Warning", "StatusUpdateFailed", fmt.Sprintf("VirtualServiceMerge object (%s) status update error", patch.Name))
+			return result, err
+		}
+	}
 	return result, err
 }
