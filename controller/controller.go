@@ -146,6 +146,19 @@ func (r *VirtualServicePatchReconciler) Reconcile(ctx context.Context, request r
 			r.EventRecorder.Event(patch, "Warning", "StatusUpdateFailed", fmt.Sprintf("VirtualServiceMerge object (%s) status update error", patch.Name))
 			return result, err
 		}
+	} else {
+		//trigger event
+		r.EventRecorder.Event(patch, "Normal", "ReconciliationSucceeded", "")
+		
+		//update status
+		patch.Status.Error = ""
+		if err := r.Context.Client().Status().Update(ctx, patch); err != nil {
+			r.Context.Logger().Error(err, fmt.Sprintf("VirtualServiceMerge object (%s) status update error", patch.Name))
+
+			//trigger event
+			r.EventRecorder.Event(patch, "Warning", "StatusUpdateFailed", fmt.Sprintf("VirtualServiceMerge object (%s) status update error", patch.Name))
+			return result, err
+		}
 	}
 	return result, err
 }
