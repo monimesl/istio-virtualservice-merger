@@ -93,7 +93,25 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 				}
 			}
 			return requests
-		})).
+		}),
+			builder.WithPredicates(
+				predicate.Funcs{
+					CreateFunc: func(e event.CreateEvent) bool {
+						return true
+					},
+					UpdateFunc: func(e event.UpdateEvent) bool {
+						// ignore updates in which case metadata.Generation does not change
+						return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+					},
+					DeleteFunc: func(e event.DeleteEvent) bool {
+						return false
+					},
+					GenericFunc: func(e event.GenericEvent) bool {
+						return false
+					},
+				},
+			),
+		).
 		Complete(r)
 }
 
