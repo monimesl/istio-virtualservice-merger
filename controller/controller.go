@@ -72,7 +72,7 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 			// get all virtual service merge whose target is this virtual service
 			vsmegeList := &v1alpha1.VirtualServiceMergeList{}
 			if err := r.Client().List(context.TODO(), vsmegeList, &client.ListOptions{
-				Namespace: vs.GetNamespace(),
+				// Namespace: vs.GetNamespace(),
 			}); err != nil {
 				panic(err)
 			}
