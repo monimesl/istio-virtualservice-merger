@@ -100,7 +100,7 @@ func (r *VirtualServicePatchReconciler) Configure(ctx reconciler.Context) error 
 						return true
 					},
 					UpdateFunc: func(e event.UpdateEvent) bool {
-						// ignore updates in which case metadata.Generation does not change
+						// ignore updates where the VirtualService spec does not change
 						return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 					},
 					DeleteFunc: func(e event.DeleteEvent) bool {
